@@ -18,7 +18,10 @@ func capture(x, y, width, height int, img *image.RGBA) error {
 		return errors.New("capture to nil img")
 	}
 	rect := image.Rect(0, 0, width, height)
-	if !img.Rect.Eq(rect) {
+
+	if img.Rect.Empty() {
+		img.Rect = rect
+	} else if !img.Rect.Eq(rect) {
 		return errors.New("capture to img that != width/height")
 	}
 
