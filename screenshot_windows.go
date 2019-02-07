@@ -13,27 +13,36 @@ var (
 	funcGetDesktopWindow, _    = syscall.GetProcAddress(syscall.Handle(libUser32), "GetDesktopWindow")
 	funcEnumDisplayMonitors, _ = syscall.GetProcAddress(syscall.Handle(libUser32), "EnumDisplayMonitors")
 )
-
-func Capture(x, y, width, height int) (*image.RGBA, error) {
+func capture(x, y, width, height int, img *image.RGBA) error {
+	if img == nil {
+		return errors.New("capture to nil img")
+	}
 	rect := image.Rect(0, 0, width, height)
-	img := image.NewRGBA(rect)
+	if !img.Rect.Eq(rect) {
+		return errors.New("capture to img that != width/height")
+	}
+
+	//img, err := util.CreateImage(rect)
+	//if err != nil {
+	//	return err
+	//}
 
 	hwnd := getDesktopWindow()
 	hdc := win.GetDC(hwnd)
 	if hdc == 0 {
-		return nil, errors.New("GetDC failed")
+		return errors.New("GetDC failed")
 	}
 	defer win.ReleaseDC(hwnd, hdc)
 
 	memory_device := win.CreateCompatibleDC(hdc)
 	if memory_device == 0 {
-		return nil, errors.New("CreateCompatibleDC failed")
+		return errors.New("CreateCompatibleDC failed")
 	}
 	defer win.DeleteDC(memory_device)
 
 	bitmap := win.CreateCompatibleBitmap(hdc, int32(width), int32(height))
 	if bitmap == 0 {
-		return nil, errors.New("CreateCompatibleBitmap failed")
+		return errors.New("CreateCompatibleBitmap failed")
 	}
 	defer win.DeleteObject(win.HGDIOBJ(bitmap))
 
@@ -57,16 +66,16 @@ func Capture(x, y, width, height int) (*image.RGBA, error) {
 
 	old := win.SelectObject(memory_device, win.HGDIOBJ(bitmap))
 	if old == 0 {
-		return nil, errors.New("SelectObject failed")
+		return errors.New("SelectObject failed")
 	}
 	defer win.SelectObject(memory_device, old)
 
 	if !win.BitBlt(memory_device, 0, 0, int32(width), int32(height), hdc, int32(x), int32(y), win.SRCCOPY) {
-		return nil, errors.New("BitBlt failed")
+		return errors.New("BitBlt failed")
 	}
 
 	if win.GetDIBits(hdc, bitmap, 0, uint32(height), (*uint8)(memptr), (*win.BITMAPINFO)(unsafe.Pointer(&header)), win.DIB_RGB_COLORS) == 0 {
-		return nil, errors.New("GetDIBits failed")
+		return errors.New("GetDIBits failed")
 	}
 
 	i := 0
@@ -85,7 +94,17 @@ func Capture(x, y, width, height int) (*image.RGBA, error) {
 		}
 	}
 
-	return img, nil
+	return nil
+}
+
+func Capture(x, y, width, height int) (*image.RGBA, error) {
+	var img image.RGBA
+	err := capture(x, y, width, height, &img)
+	return &img, err
+}
+
+func CaptureToImage(x, y, width, height int, img *image.RGBA) error {
+	return capture(x, y, width, height, img)
 }
 
 func NumActiveDisplays() int {

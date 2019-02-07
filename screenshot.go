@@ -16,3 +16,7 @@ func CaptureDisplay(displayIndex int) (*image.RGBA, error) {
 func CaptureRect(rect image.Rectangle) (*image.RGBA, error) {
 	return Capture(rect.Min.X, rect.Min.Y, rect.Dx(), rect.Dy())
 }
+
+func CaptureRectToImage(rect image.Rectangle, img *image.RGBA) error {
+	return CaptureToImage(rect.Min.X, rect.Min.Y, rect.Dx(), rect.Dy(), img)
+}
