@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kbinani/screenshot"
+	"github.com/hhh0pE/screenshot"
 	"image"
 	"image/png"
 	"os"
